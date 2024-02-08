@@ -1,0 +1,70 @@
+.chat-container {
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.message {
+  padding: 10px;
+  margin: 5px;
+  border-radius: 4px;
+  position: relative;
+}
+
+.user-question {
+  background-color: #007bff;
+  color: white;
+  text-align: left;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.ai-answer {
+  background-color: #f1f1f1;
+  border: 2px solid #007bff;
+  text-align: left;
+  max-width: 80%;
+  word-wrap: break-word;
+  margin-left: auto; /* Align to the right */
+}
+
+/* Style adjustments for a better visual distinction between user and AI messages */
+.user-question:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -10px;
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-left-color: #007bff;
+  border-right: 0;
+  border-bottom: 0;
+  margin-top: 5px;
+}
+
+.ai-answer:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -20px; /* Adjust left position to align the triangle properly */
+  width: 0;
+  height: 0;
+  border: 10px solid transparent;
+  border-right-color: #f1f1f1;
+  border-left: 0;
+  border-bottom: 0;
+  margin-top: 5px;
+}
+
+/* Additional styles to make the chat container visually appealing */
+.form-group {
+  margin-bottom: 10px;
+}
+
+/* Scroll to bottom for the latest messages */
+.chat-container {
+  scroll-behavior: smooth;
+}

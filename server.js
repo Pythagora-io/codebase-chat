@@ -17,6 +17,14 @@ app.use(bodyParser.json());
 // Serve static content from 'public' directory
 app.use(express.static('public'));
 
+// Set EJS as the view engine
+app.set('view engine', 'ejs');
+console.log('EJS view engine set.');
+
+// Set the directory for EJS templates
+app.set('views', path.join(__dirname, 'views'));
+console.log(`Views directory set to ${path.join(__dirname, 'views')}.`);
+
 // Include our routes with the app
 app.use('/', routes);
 

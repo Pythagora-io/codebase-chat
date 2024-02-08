@@ -1,33 +1,34 @@
 # CodeWhisperer
 
-CodeWhisperer is a Node.js application leveraging Express and MongoDB, with a Bootstrap-based UI. It facilitates conversation with code repositories by summarizing files and projects using OpenAI's gpt-3.5-turbo-16k and gpt-4-turbo-preview models.
+CodeWhisperer is an innovative Node.js application that allows users to have conversations with their code repositories. By leveraging the power of OpenAI's AI models, it can summarize text files and entire code repositories to facilitate a chat-like interaction.
 
 ## Overview
 
-The app utilizes Express.js for server-side operations and MongoDB as a data storage solution. It uses the Bootstrap framework to create a responsive UI. The application operates by accepting GitHub repository URLs and email addresses, cloning repositories, extracting and summarizing textual content, and storing summaries in MongoDB. Email notifications are sent through Sendgrid upon task completion.
+The application is built using Express for server management, MongoDB for data persistence, and Bootstrap for the front-end interface. It primarily interacts with OpenAI's API to create summaries of repositories and engage users in conversations about their code. The app processes GitHub repositories by cloning them, generating summaries through the gpt-3.5-turbo-16k and gpt-4-turbo-preview AI models, and then communicates the results via email using Sendgrid.
 
 ## Features
 
-- Accept GitHub repository URLs and emails on the main page
-- Clone, summarize, and delete repositories upon processing
-- Interact with OpenAI's API to generate code and project summaries
-- Email users with links to interact with their repository summaries
-- Display project summary and offer a chat-like interface for Q&A powered by OpenAI
+- Accepts GitHub repository URLs and user email addresses for processing
+- Clones repositories and summarizes text files and overall project contents
+- Communicates with OpenAI's API to generate summaries and answer user queries
+- Sends email notifications with links to interact with the repository summary
+- Provides a chat interface for dynamic interaction with the project summary
 
 ## Getting started
 
 ### Requirements
 
-- Node.js
-- MongoDB
-- An OpenAI API key
+- Node.js environment
+- MongoDB instance
+- OpenAI API key
+- Sendgrid credentials for email notifications
 
 ### Quickstart
 
-1. Clone the repository to your local machine.
-2. Install dependencies with `npm install`.
-3. Set up your `.env` file with the necessary environment variables (PORT, MONGODB_URI, and OPENAI_API_KEY).
-4. Run the server using `npm start` or `node server.js`.
+1. Clone the repository to your machine.
+2. Install necessary Node.js packages with `npm install`.
+3. Configure the required environment variables within an `.env` file.
+4. Run the application using `npm start` or `node server.js`.
 
 ### License
 
