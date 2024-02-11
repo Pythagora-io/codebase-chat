@@ -11,21 +11,21 @@ const openai = new OpenAI(process.env.OPENAI_API_KEY);
 async function processRepository(githubUrl, email) {
   // Start processing asynchronously
   processRepoInBackground(githubUrl, email).catch(error => {
-    console.error('Asynchronous processing error:', error.message, error.stack); // gpt_pilot_debugging_log
+    console.error('Asynchronous processing error:', error.message, error.stack);
     // Save the error state to the database
     Repository.findOneAndUpdate({ githubUrl, email }, { isProcessed: true, processingError: error.message }, { new: true }).catch(err => {
-      console.error('Failed to update repository with error state:', err.message, err.stack); // gpt_pilot_debugging_log
+      console.error('Failed to update repository with error state:', err.message, err.stack);
     });
   });
 
   // Return immediately for the server to send the response
-  console.log(`Processing started for repository: ${githubUrl}`); // This log confirms the asynchronous start
+  console.log(`Processing started for repository: ${githubUrl}`);
 }
 
 async function processRepoInBackground(githubUrl, email) {
   let tempDirPath;
   try {
-    const { processedFiles, tempDirPath: dirPath } = await cloneAndProcessRepo(githubUrl);
+    const { processedFiles, allFiles, tempDirPath: dirPath } = await cloneAndProcessRepo(githubUrl);
     tempDirPath = dirPath;
     let fileSummariesObject = {};
 
@@ -35,21 +35,34 @@ async function processRepoInBackground(githubUrl, email) {
         const summary = await generateSummary(content);
         fileSummariesObject[file] = summary; // Store summary associated with file name
       } catch (fileReadError) {
-        console.error('Error reading file:', fileReadError.message, fileReadError.stack); // gpt_pilot_debugging_log
+        console.error('Error reading or summarizing file:', file, fileReadError.message, fileReadError.stack);
       }
     }
 
     const fileSummariesArray = Object.values(fileSummariesObject); // Convert summaries object to array
-    console.log('File summaries:', fileSummariesArray); // gpt_pilot_debugging_log
-    
+    console.log('File summaries:', fileSummariesArray);
+
     const combinedSummaries = fileSummariesArray.join(' ');
+
+    // Convert allFiles array to string, where each file path is separated by a new line
+    const allFilesString = allFiles.join('\n');
+    console.log(`All files as string: ${allFilesString}`); // gpt_pilot_debugging_log
+    
+    // Now, combine the individual file summaries and the allFilesString
+    const combinedSummariesWithPaths = `${combinedSummaries}\n\n${allFilesString}`;
+
+    // Update the projectSummaryResponse OpenAI call:
     const projectSummaryResponse = await openai.chat.completions.create({
       model: 'gpt-4-turbo-preview',
-      messages: [{ role: "system", content: "Summarize this project based on the individual file summaries." }, { role: "user", content: combinedSummaries }],
-      max_tokens: 1024,
+      messages: [{ role: "system", content: "Summarize this project based on the individual file summaries and the list of all file paths." }, { role: "user", content: combinedSummariesWithPaths }],
+      max_tokens: 2048,
       temperature: 0.5
+    }).catch(error => {
+      console.error('Error during OpenAI project summary call with all file paths:', error.message, error.stack); // gpt_pilot_debugging_log
+      throw error;
     });
-
+    console.log(`Project summary with all file paths has been generated.`); // gpt_pilot_debugging_log
+    
     const projectSummary = projectSummaryResponse.choices[0].message.content.trim();
     const updatedRepository = await Repository.findOneAndUpdate(
       { githubUrl, email }, 

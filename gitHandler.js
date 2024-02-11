@@ -7,40 +7,41 @@ const maxFileSize = 32 * 1024; // 32kb in bytes
 
 const cloneAndProcessRepo = async (repoUrl) => {
   const tempDir = tmp.dirSync({ unsafeCleanup: true });
-  console.log(`Temporary directory created at: ${tempDir.name}`); // gpt_pilot_debugging_log
+  console.log(`Temporary directory created at: ${tempDir.name}`);
   try {
     console.log(`Cloning the repository: ${repoUrl}`);
     const git = simpleGit();
     await git.clone(repoUrl, tempDir.name);
     console.log('Repository cloned.');
-    const files = await getAllFiles(tempDir.name);
-    const processedFiles = await filterAndCheckFiles(files);
-    console.log('Files have been checked.');
-    console.log(`Temporary directory will be kept at: ${tempDir.name} for file processing.`); // gpt_pilot_debugging_log
-    return { processedFiles: processedFiles, tempDirPath: tempDir.name };
+    const { allFiles, textFiles } = await getAllFiles(tempDir.name);
+    const processedFiles = await filterAndCheckFiles(textFiles);
+    console.log('Files have been checked and filtered.');
+    return { processedFiles: processedFiles, allFiles: allFiles, tempDirPath: tempDir.name };
   } catch (error) {
-    console.error('Error occurred in cloneAndProcessRepo:', error.message, error.stack); // gpt_pilot_debugging_log
-    tempDir.removeCallback(); // Ensure cleanup even in case of error
+    console.error('Error occurred in cloneAndProcessRepo:', error.message, error.stack);
+    tempDir.removeCallback();
     throw error;
   }
 };
 
-const getAllFiles = async (dirPath, arrayOfFiles = []) => {
+const getAllFiles = async (dirPath, allFiles = [], textFiles = []) => {
   try {
     const files = await fs.readdir(dirPath);
     for (const file of files) {
       const fullPath = path.join(dirPath, file);
-      console.log(`Full path of file: ${fullPath}`); // gpt_pilot_debugging_log
       const stat = await fs.stat(fullPath);
+      allFiles.push(fullPath);
       if (stat.isDirectory()) {
-        await getAllFiles(fullPath, arrayOfFiles);
+        await getAllFiles(fullPath, allFiles, textFiles);
       } else {
-        arrayOfFiles.push(fullPath);
+        if (isText(fullPath)) {
+          textFiles.push(fullPath);
+        }
       }
     }
-    return arrayOfFiles;
+    return { allFiles, textFiles };
   } catch (error) {
-    console.error('Error occurred while getting all files:', error.message, error.stack); // gpt_pilot_debugging_log
+    console.error('Error occurred while getting all files:', error.message, error.stack);
     throw error;
   }
 };
@@ -50,25 +51,34 @@ const filterAndCheckFiles = async (files) => {
     const processedFiles = [];
     for (const file of files) {
       const stat = await fs.stat(file);
-      if (stat.size <= maxFileSize && isText(file)) {
-        processedFiles.push(file);
+      if (stat.size <= maxFileSize) {
+        const isTextFile = await isText(file);
+        console.log(`Checked if file is text: ${file}, Result: ${isTextFile}`);
+        if (isTextFile) {
+          processedFiles.push(file);
+        }
       }
     }
-    console.log(`Text files smaller than 32kb:`, processedFiles); // gpt_pilot_debugging_log
+    console.log(`Text files smaller than 32kb:`, processedFiles);
     return processedFiles;
   } catch (error) {
-    console.error('Error occurred while filtering and checking files:', error.message, error.stack); // gpt_pilot_debugging_log
+    console.error('Error occurred while filtering and checking files:', error.message, error.stack);
     throw error;
   }
 };
 
-const isText = (filename) => {
-  const textFileExtensions = /\.txt$/i;
-  const isText = textFileExtensions.test(path.extname(filename));
-  console.log(`Checking if ${filename} is a text file: ${isText}`); // gpt_pilot_debugging_log
-  return isText;
+const isText = async (filename) => {
+  try {
+    await fs.readFile(filename, 'utf8');
+    console.log(`The file ${filename} is a text file.`);
+    return true;
+  } catch (error) {
+    console.error('Error when checking if file is a text file:', error.message, error.stack);
+    return false;
+  }
 };
 
 module.exports = {
-  cloneAndProcessRepo
+  cloneAndProcessRepo,
+  isText
 };
