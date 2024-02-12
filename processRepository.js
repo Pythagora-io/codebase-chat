@@ -4,6 +4,7 @@ const { generateSummary } = require('./openaiService');
 const { sendEmailNotification } = require('./emailService');
 const fs = require('fs-extra');
 const OpenAI = require('openai');
+const path = require('path');
 require('dotenv').config();
 
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
@@ -27,6 +28,32 @@ async function processRepoInBackground(githubUrl, email) {
   try {
     const { processedFiles, allFiles, tempDirPath: dirPath } = await cloneAndProcessRepo(githubUrl);
     tempDirPath = dirPath;
+
+    // Exclude files within ".git" directory and check if there are 0 text files
+    let relevantFiles;
+    try {
+      const gitDirPath = dirPath + path.sep + '.git';
+      console.log(`Checking for git directory using path: ${gitDirPath}`); // gpt_pilot_debugging_log
+      relevantFiles = processedFiles.filter(file => !file.includes(gitDirPath));
+      console.log('Filtered relevantFiles:', relevantFiles); // gpt_pilot_debugging_log
+    } catch (error) {
+      console.error('Error filtering relevant files:', error.message, error.stack); // gpt_pilot_error_log
+      throw error;
+    }
+
+    if (relevantFiles.length === 0) {
+      console.log('No text files found in the repository, excluding the .git directory.'); // gpt_pilot_debugging_log
+      await fs.remove(tempDirPath).catch(fsRemoveError => {
+        console.error('Error removing temporary directory:', fsRemoveError.message, fsRemoveError.stack); // gpt_pilot_debugging_log
+      });
+      await Repository.deleteOne({ githubUrl, email }).catch(deleteError => {
+        console.error('Error deleting repository entry from database:', deleteError.message, deleteError.stack); // gpt_pilot_debugging_log
+      });
+      await sendEmailNotification(email, 'no-text-files', githubUrl, null);
+      console.log(`No text files found notification sent to: ${email}`); // gpt_pilot_debugging_log
+      return;
+    }
+
     let fileSummariesObject = {};
 
     for (const file of processedFiles) {
@@ -65,12 +92,12 @@ async function processRepoInBackground(githubUrl, email) {
     
     const projectSummary = projectSummaryResponse.choices[0].message.content.trim();
     const updatedRepository = await Repository.findOneAndUpdate(
-      { githubUrl, email }, 
+      { githubUrl, email },
       { 
         summary: projectSummary, 
         isProcessed: true, 
         fileSummaries: fileSummariesArray // Save the summaries array to the database 
-      }, 
+      },
       { new: true }
     );
     console.log(`Repository has been processed and file summaries stored: ${githubUrl}`, fileSummariesArray); // gpt_pilot_debugging_log
