@@ -8,7 +8,9 @@
     background-color: #6c757d !important; /* Keep footer background color */
     color: #fff; /* Ensure text on dark background is white for better readability */
     padding-top: 1rem; /* Add padding to the top for clear visibility and distinction */
+    padding-bottom: 1rem; /* Add padding to the bottom for visual distinction */
     margin-bottom: 0 !important; /* Set footer margin-bottom to 0 as per user input */
+    margin-top: 2rem; /* Add top margin to ensure visual separation from the content */
 }
 
 .navbar {
@@ -20,4 +22,19 @@
 
 .header {
     margin-bottom: 2rem; /* Adjust bottom margin for visual separation */
+}
+
+.footer h5 {
+    color: #fff;
+    margin-bottom: 15px;
+    font-weight: bolder;
+}
+
+.footer p a.text-white {
+    color: #fff;
+}
+
+.footer p a.text-white:hover {
+    color: #ddd;
+    text-decoration: none;
 }
