@@ -14,15 +14,22 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-async function sendEmailNotification(email, type, repoUrl, uuid) {
-  let subject, html;
-  if (type === 'no-text-files') {
+async function sendEmailNotification(email, uuid, repoUrl) {
+  let subject;
+  let html;
+  const baseUrl = process.env.BASE_URL || 'http://localhost:3001';
+
+  if (uuid === 'no-text-files') {
     subject = 'Analysis of your repository';
-    html = `The repository <${repoUrl}> has been analyzed. Since it doesn't contain any text files, we couldn't process it at the moment. Please try again with a different repository.`;
-    console.log(`Preparing to send 'no text files found' email to: ${email}`); // gpt_pilot_debugging_log
+    html = `The repository ${repoUrl} has been analyzed. Since it doesn't contain any text files, we couldn't process it at the moment. Please try again with a different repository.`;
+    console.log(`Preparing to send 'no text files' notification email to: ${email}`); // gpt_pilot_debugging_log
   } else {
+    if(!uuid) {
+      console.error('The UUID is undefined.', { email, repoUrl }); // gpt_pilot_debugging_log
+      throw new Error('The UUID is undefined.');
+    }
     subject = 'Your repo is ready for a chat!';
-    html = `The repository <a href="${repoUrl}">${repoUrl}</a> has been analyzed. You can chat with it at <a href="${process.env.BASE_URL}/explain/${uuid}">${process.env.BASE_URL}/explain/${uuid}</a>.`;
+    html = `The repository <a href="${repoUrl}">${repoUrl}</a> has been analyzed. You can chat with it at <a href="${baseUrl}/explain/${uuid}">${baseUrl}/explain/${uuid}</a>.`;
     console.log(`Preparing to send 'repo ready' notification email to: ${email}`); // gpt_pilot_debugging_log
   }
 
@@ -35,9 +42,9 @@ async function sendEmailNotification(email, type, repoUrl, uuid) {
 
   try {
     const result = await transporter.sendMail(mailOptions);
-    console.log(`${type === 'no-text-files' ? 'No text files email' : 'Processing completed email'} sent successfully to ${email}. Result: ${JSON.stringify(result)}`); // gpt_pilot_debugging_log
+    console.log(`Email sent successfully to ${email}. Result: ${JSON.stringify(result)}`); // gpt_pilot_debugging_log
   } catch (error) {
-    console.error(`Failed to send ${type === 'no-text-files' ? 'no text files email' : 'processing completed email'} notification: ${error}`, error.stack); // gpt_pilot_debugging_log
+    console.error(`Failed to send email: ${error.message}`, error.stack); // gpt_pilot_debugging_log
     throw error;
   }
 }

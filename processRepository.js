@@ -49,7 +49,7 @@ async function processRepoInBackground(githubUrl, email) {
       await Repository.deleteOne({ githubUrl, email }).catch(deleteError => {
         console.error('Error deleting repository entry from database:', deleteError.message, deleteError.stack); // gpt_pilot_debugging_log
       });
-      await sendEmailNotification(email, 'no-text-files', githubUrl, null);
+      await sendEmailNotification(email, 'no-text-files', githubUrl); // Removed the null argument
       console.log(`No text files found notification sent to: ${email}`); // gpt_pilot_debugging_log
       return;
     }
@@ -96,33 +96,30 @@ async function processRepoInBackground(githubUrl, email) {
       { 
         summary: projectSummary, 
         isProcessed: true, 
-        fileSummaries: fileSummariesArray // Save the summaries array to the database 
+        fileSummaries: fileSummariesArray 
       },
       { new: true }
     );
-    console.log(`Repository has been processed and file summaries stored: ${githubUrl}`, fileSummariesArray); // gpt_pilot_debugging_log
-    console.log(`Ready to send email notification to: ${email} for repository: ${githubUrl}`); // gpt_pilot_debugging_log
+
+    console.log(`Ready to send email notification. UUID: ${updatedRepository.uuid}`); // gpt_pilot_debugging_log
 
     try {
       await sendEmailNotification(email, updatedRepository.uuid, githubUrl);
-      console.log(`Email notification sent to: ${email} for repository: ${githubUrl}`); // gpt_pilot_debugging_log
+      console.log(`Email notification sent. UUID: ${updatedRepository.uuid}`); // gpt_pilot_debugging_log
     } catch (notificationError) {
-      console.error(`Error sending email notification to ${email}:`, notificationError.message, notificationError.stack); // gpt_pilot_debugging_log
+      console.error(`Error sending email notification. UUID: ${updatedRepository.uuid}:`, notificationError.message, notificationError.stack); // gpt_pilot_debugging_log
     }
 
   } catch (error) {
-    console.error('Error during repository background processing:', error.message, error.stack); // gpt_pilot_debugging_log
-    throw error;
+    console.error('Error during repository background processing:', error.message, error.stack);
   } finally {
     if (tempDirPath) {
       try {
         await fs.remove(tempDirPath);
-        console.log('Temporary directory has been removed.'); // gpt_pilot_debugging_log
+        console.log('Temporary directory has been removed.');
       } catch (tempDirError) {
-        console.error('Error removing temporary directory:', tempDirError.message, tempDirError.stack); // gpt_pilot_debugging_log
+        console.error('Error removing temporary directory:', tempDirError.message, tempDirError.stack);
       }
-    } else {
-      console.log('Temporary directory path is undefined, so skipping removal.'); // gpt_pilot_debugging_log
     }
   }
 }
