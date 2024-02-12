@@ -1,77 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Explain CodeWhisperer Repo</title>
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-  <link rel="stylesheet" href="/chat.css">
+    <%- include('_head') %>
+    <title>Repository Summary</title>
+    <link rel="stylesheet" href="/chat.css"> <!-- Link to the chat stylesheet specific to the explain page -->
 </head>
 <body>
-  <div class="container">
-    <h1>Repository Summary</h1>
-    <h2><a href="<%= githubUrl %>"><%= githubUrl %></a></h2>
-    <div id="summary"><%= summary %></div>
-    <h2>Ask a question about this repository:</h2>
-    <div id="chat-interface">
-      <!-- Begin Chat Form -->
-      <form id="chat-form">
-        <div class="form-group">
-          <input type="text" id="chat-input" class="form-control" placeholder="Type your question here..." required>
+    <%- include('_header') %>
+    <div class="container">
+        <h1>Repository Summary</h1>
+        <h2><a href="<%= githubUrl %>"><%= githubUrl %></a></h2>
+        <div id="summary"><%= summary %></div>
+        <h2>Ask a question about this repository:</h2>
+        <div id="chat-interface">
+            <form id="chat-form">
+                <div class="form-group">
+                    <input type="text" id="chat-input" class="form-control" placeholder="Type your question here..." required>
+                </div>
+                <button type="submit" class="btn btn-primary">Send</button>
+            </form>
+            <div id="chat" class="chat-container"></div>
         </div>
-        <button type="submit" class="btn btn-primary">Send</button>
-      </form>
-      <div id="chat" class="chat-container"></div>
-      <!-- End Chat Form -->
     </div>
-  </div>
-  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-  <script>
-  document.addEventListener('DOMContentLoaded', (event) => {
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const chatContainer = document.getElementById('chat');
-
-    chatForm.addEventListener('submit', async function(e) {
-      e.preventDefault();
-
-      const question = chatInput.value.trim();
-      const uuid = '<%= uuid %>';
-
-      if (question) {
-        const messageElement = document.createElement('div');
-        messageElement.textContent = `You: ${question}`;
-        messageElement.className = 'message user-question'; // gpt_pilot_debugging_log
-        chatContainer.appendChild(messageElement);
-
-        try {
-          const response = await fetch(`/interact/${uuid}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question })
-          });
-
-          if (!response.ok) {
-            throw new Error(`Network response was not ok, status: ${response.status}`); // gpt_pilot_error_handling
-          }
-
-          const data = await response.json();
-          const answerElement = document.createElement('div');
-          answerElement.textContent = `AI: ${data.answer}`;
-          answerElement.className = 'message ai-answer'; // gpt_pilot_debugging_log
-          chatContainer.appendChild(answerElement);
-        } catch (error) {
-          console.error('Fetch error:', error.message, error.stack); // gpt_pilot_error_handling
-          const errorElement = document.createElement('div');
-          errorElement.textContent = `AI: Sorry, something went wrong while getting a response.`;
-          chatContainer.appendChild(errorElement);
-        }
-
-        chatInput.value = '';
-      }
-    });
-  });
-  </script>
+    <%- include('_footer') %>
+    <script src="/chat.js"></script>
 </body>
 </html>

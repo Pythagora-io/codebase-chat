@@ -68,3 +68,9 @@
 .chat-container {
   scroll-behavior: smooth;
 }
+
+.loading-indicator {
+  text-align: center;
+  padding: 10px;
+  font-style: italic;
+}

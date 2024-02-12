@@ -1,0 +1,23 @@
+/* Add custom styles that apply to all pages using the shared layout */
+
+.bg-secondary {
+    background-color: #6c757d !important; /* Bootstrap's secondary color */
+}
+
+.footer {
+    background-color: #6c757d !important; /* Keep footer background color */
+    color: #fff; /* Ensure text on dark background is white for better readability */
+    padding-top: 1rem; /* Add padding to the top for clear visibility and distinction */
+    margin-bottom: 0 !important; /* Set footer margin-bottom to 0 as per user input */
+}
+
+.navbar {
+    background-color: #6c757d !important; /* Bootstrap's secondary color for the navbar */
+    color: #fff; /* Ensure text on dark background is white for better readability */
+    padding-top: 1rem; /* Add padding to the top for clear visibility and distinction */
+    margin-bottom: 2rem; /* Adjust bottom margin for visual separation between navbar and other components */
+}
+
+.header {
+    margin-bottom: 2rem; /* Adjust bottom margin for visual separation */
+}
