@@ -1,6 +1,6 @@
-# CodeWhisperer
+# CodeChat
 
-CodeWhisperer is a web-based application designed to facilitate insightful interactions between users and their code repositories. By leveraging cutting-edge AI technologies, CodeWhisperer provides intelligent summaries and detailed explanations, engaging users in a conversational interface that demystifies complex codebases.
+CodeChat is a web-based application designed to facilitate insightful interactions between users and their code repositories. By leveraging cutting-edge AI technologies, CodeChat provides intelligent summaries and detailed explanations, engaging users in a conversational interface that demystifies complex codebases.
 
 ## Overview
 
