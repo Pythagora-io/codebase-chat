@@ -33,4 +33,6 @@ The app integrates the Express framework within a Node.js environment, utilizing
 
 ### License
 
-Copyright (c) 2024.
+The project is open source, licensed under the MIT License. See the [LICENSE](LICENSE).
+
+Copyright © 2024 Pythagora-io.
