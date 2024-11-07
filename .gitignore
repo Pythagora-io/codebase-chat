@@ -1,3 +1,4 @@
 node_modules/
 .gpt-pilot/
 package-lock.json
+.env
