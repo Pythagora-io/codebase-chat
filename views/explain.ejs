@@ -7,12 +7,12 @@
 </head>
 <body>
     <%- include('_header') %>
-    <div class="container">
+    <div class="container fade-in">
         <h1>Repository Summary</h1>
         <h2><a href="<%= githubUrl %>"><%= githubUrl %></a></h2>
-        <div id="summary"><%= summary %></div>
+        <div id="summary" class="slide-up"><%= summary %></div>
         <h2>Ask a question about this repository:</h2>
-        <div id="chat-interface">
+        <div id="chat-interface" class="slide-up">
             <form id="chat-form">
                 <div class="form-group">
                     <input type="text" id="chat-input" class="form-control" placeholder="Type your question here..." required>

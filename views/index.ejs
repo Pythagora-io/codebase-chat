@@ -2,23 +2,28 @@
 <html lang="en">
 <head>
     <%- include('_head') %>
-    <title>Submit Repository</title>
+    <title>Welcome to Codebase Chat</title>
 </head>
 <body>
     <%- include('_header') %>
-    <div class="container">
-        <h1>Submit a GitHub Repository</h1>
-        <form method="POST" action="/submit">
-            <div class="form-group">
-                <label for="githubUrl">GitHub URL</label>
-                <input type="url" id="githubUrl" name="githubUrl" class="form-control" required>
+    <div class="container mt-5 fade-in">
+        <h1 class="mb-4">Welcome to Codebase Chat</h1>
+        <div class="card slide-up">
+            <div class="card-body">
+                <h5 class="card-title">Submit a GitHub Repository</h5>
+                <form action="/submit" method="POST">
+                    <div class="mb-3">
+                        <label for="githubUrl" class="form-label">GitHub URL</label>
+                        <input type="url" class="form-control" id="githubUrl" name="githubUrl" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit</button>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="email">Email address</label>
-                <input type="email" id="email" name="email" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </form>
+        </div>
     </div>
     <%- include('_footer') %>
 </body>

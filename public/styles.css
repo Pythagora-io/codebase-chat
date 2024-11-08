@@ -1,6 +1,7 @@
 /* Add custom styles that apply to all pages using the shared layout */
 body {
     padding-bottom: 60px;
+    font-family: 'Roboto', sans-serif;
 }
 
 footer {
@@ -28,4 +29,58 @@ nav.navbar {
 
 .header {
     margin-bottom: 2rem; /* Adjust bottom margin for visual separation */
+}
+
+/* Modern design enhancements */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.card {
+  border-radius: 15px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn {
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: scale(1.05);
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Maintain existing color scheme */
+.bg-secondary {
+  background-color: #6c757d !important;
+}
+
+.text-light {
+  color: #f8f9fa !important;
 }

@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
         if (question) {
             sendButton.disabled = true; // Disable the send button while waiting for a response
-            const messageElement = document.createElement('div');
-            messageElement.textContent = 'You: ' + question;
-            messageElement.className = 'message user-question';
-            chatContainer.appendChild(messageElement);
+            const userMessage = document.createElement('div');
+            userMessage.textContent = 'You: ' + question;
+            userMessage.className = 'message user-question animate__animated animate__fadeInRight';
+            chatContainer.appendChild(userMessage);
 
             loaderElement.style.display = 'block'; // Show loading spinner immediately after sending request
             chatContainer.appendChild(loaderElement); // Append the loading indicator into the chat container
@@ -49,10 +49,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
                 }
 
                 const data = await response.json();
-                const answerElement = document.createElement('div');
-                answerElement.textContent = 'AI: ' + data.answer;
-                answerElement.className = 'message ai-answer';
-                chatContainer.appendChild(answerElement);
+                const aiMessage = document.createElement('div');
+                aiMessage.textContent = 'AI: ' + data.answer;
+                aiMessage.className = 'message ai-answer animate__animated animate__fadeInLeft';
+                chatContainer.appendChild(aiMessage);
             } catch (fetchError) {
                 console.error('Fetch error:', fetchError.message, fetchError.stack); // gpt_pilot_debugging_log
                 const errorElement = document.createElement('div');

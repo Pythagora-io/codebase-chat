@@ -1,6 +1,6 @@
-# CodeChat
+# Codebase Chat
 
-CodeChat is a web-based application designed to facilitate insightful interactions between users and their code repositories. By leveraging cutting-edge AI technologies, CodeChat provides intelligent summaries and detailed explanations, engaging users in a conversational interface that demystifies complex codebases.
+Codebase Chat is a web-based tool designed to enhance user interactions with their code repositories through AI-driven summaries and explanations.
 
 ## Overview
 
