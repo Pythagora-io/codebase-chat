@@ -1,5 +1,13 @@
 <header>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <a class="navbar-brand" href="/">Codebase Chat</a>
-      </nav>
+        <div class="navbar-nav ml-auto">
+            <% if (locals.userId) { %>
+                <a class="nav-item nav-link" href="/logout">Logout</a>
+            <% } else { %>
+                <a class="nav-item nav-link" href="/login">Login</a>
+                <a class="nav-item nav-link" href="/register">Register</a>
+            <% } %>
+        </div>
+    </nav>
 </header>
