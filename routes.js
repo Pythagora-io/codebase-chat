@@ -70,23 +70,28 @@ router.get('/logout', (req, res) => {
   });
 });
 
-router.post('/submit', async (req, res) => {
+router.post('/submit', isAuthenticated, async (req, res) => {
   console.log('POST request made to /submit');
-  const { githubUrl, email } = req.body;
-  if (!githubUrl || !email) {
-    return res.status(400).render('submit', { message: 'Repository URL and email are both required.', userId: req.session ? req.session.userId : null });
+  const { githubUrl } = req.body;
+  if (!githubUrl) {
+    return res.status(400).render('submit', { message: 'Repository URL is required.', userId: req.session.userId });
   }
   try {
+    const user = await User.findById(req.session.userId);
+    if (!user.openaiApiKey) {
+      return res.status(400).render('submit', { message: 'Please set your OpenAI API key before submitting a repository.', userId: req.session.userId });
+    }
+
     const repoResponse = await axios.get(githubUrl.replace('https://github.com', 'https://api.github.com/repos'));
     if (repoResponse.data.private) {
       console.error('Repository is private:', githubUrl);
-      return res.status(400).render('submit', { message: 'Repository is private or does not exist.', userId: req.session ? req.session.userId : null });
+      return res.status(400).render('submit', { message: 'Repository is private or does not exist.', userId: req.session.userId });
     } else if (repoResponse.data.size === 0) {
       console.log(`Repository ${githubUrl} is empty and cannot be processed.`);
-      return res.status(400).render('submit', { message: 'The repository is empty and cannot be processed.', userId: req.session ? req.session.userId : null });
+      return res.status(400).render('submit', { message: 'The repository is empty and cannot be processed.', userId: req.session.userId });
     } else if (repoResponse.data.size > 500) {
       console.error('Repository has more than 500 files:', githubUrl);
-      return res.status(400).render('submit', { message: 'Repository has more than 500 files and cannot be processed.', userId: req.session ? req.session.userId : null });
+      return res.status(400).render('submit', { message: 'Repository has more than 500 files and cannot be processed.', userId: req.session.userId });
     }
     const existingRepo = await Repository.findOne({ githubUrl });
     if (existingRepo) {
@@ -95,18 +100,18 @@ router.post('/submit', async (req, res) => {
         return res.redirect(`/explain/${existingRepo.uuid}`);
       } else {
         console.log(`Repository is currently being processed: ${githubUrl}`);
-        return res.status(200).render('submit', { message: 'Repository is currently being processed.', userId: req.session ? req.session.userId : null });
+        return res.status(200).render('submit', { message: 'Repository is currently being processed.', userId: req.session.userId });
       }
     }
-    const newRepo = new Repository({ githubUrl, email });
+    const newRepo = new Repository({ githubUrl, email: user.email });
     await newRepo.save();
     console.log(`New repository saved with URL: ${githubUrl}`);
-    await processRepository(newRepo.githubUrl, newRepo.email);
+    await processRepository(newRepo.githubUrl, user.email, user.openaiApiKey);
     console.log(`Processing started for repository: ${newRepo.githubUrl}`);
-    res.status(201).render('submit', { message: 'Repository processing started. You will receive an email when it is complete.', userId: req.session ? req.session.userId : null });
+    res.status(201).render('submit', { message: 'Repository processing started. You will receive an email when it is complete.', userId: req.session.userId });
   } catch (error) {
     console.error('Error handling POST /submit:', error.message, error.stack);
-    res.status(400).render('submit', { message: 'Error checking repository. Make sure the URL is correct and the repository is public.', userId: req.session ? req.session.userId : null });
+    res.status(400).render('submit', { message: 'Error checking repository. Make sure the URL is correct and the repository is public.', userId: req.session.userId });
   }
 });
 
@@ -141,7 +146,14 @@ router.post('/interact/:uuid', async (req, res) => {
   console.log(`POST request made to /interact/${uuid} with question: ${userMessage}`);
 
   try {
-    const answer = await interactWithRepository(uuid, userMessage);
+    // Fetch the user from the database
+    const user = await User.findById(req.session.userId);
+    if (!user || !user.openaiApiKey) {
+      throw new Error('User not found or API key not set');
+    }
+
+    // Pass the API key to interactWithRepository
+    const answer = await interactWithRepository(uuid, userMessage, user.openaiApiKey);
     console.log(`Answer retrieved from interactWithRepository for UUID: ${uuid}`);
     res.json({ answer });
   } catch (error) {

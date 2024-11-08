@@ -3,15 +3,11 @@ const { cloneAndProcessRepo } = require('./gitHandler');
 const { generateSummary } = require('./openaiService');
 const { sendEmailNotification } = require('./emailService');
 const fs = require('fs-extra');
-const OpenAI = require('openai');
 const path = require('path');
-require('dotenv').config();
 
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
-
-async function processRepository(githubUrl, email) {
+async function processRepository(githubUrl, email, openaiApiKey) {
   // Start processing asynchronously
-  processRepoInBackground(githubUrl, email).catch(error => {
+  processRepoInBackground(githubUrl, email, openaiApiKey).catch(error => {
     console.error('Asynchronous processing error:', error.message, error.stack);
     // Save the error state to the database
     Repository.findOneAndUpdate({ githubUrl, email }, { isProcessed: true, processingError: error.message }, { new: true }).catch(err => {
@@ -23,7 +19,7 @@ async function processRepository(githubUrl, email) {
   console.log(`Processing started for repository: ${githubUrl}`);
 }
 
-async function processRepoInBackground(githubUrl, email) {
+async function processRepoInBackground(githubUrl, email, openaiApiKey) {
   let tempDirPath;
   try {
     const { processedFiles, allFiles, tempDirPath: dirPath } = await cloneAndProcessRepo(githubUrl);
@@ -33,33 +29,33 @@ async function processRepoInBackground(githubUrl, email) {
     let relevantFiles;
     try {
       const gitDirPath = dirPath + path.sep + '.git';
-      console.log(`Checking for git directory using path: ${gitDirPath}`); // gpt_pilot_debugging_log
+      console.log(`Checking for git directory using path: ${gitDirPath}`);
       relevantFiles = processedFiles.filter(file => !file.includes(gitDirPath));
-      console.log('Filtered relevantFiles:', relevantFiles); // gpt_pilot_debugging_log
+      console.log('Filtered relevantFiles:', relevantFiles);
     } catch (error) {
-      console.error('Error filtering relevant files:', error.message, error.stack); // gpt_pilot_error_log
+      console.error('Error filtering relevant files:', error.message, error.stack);
       throw error;
     }
 
     if (relevantFiles.length === 0) {
-      console.log('No text files found in the repository, excluding the .git directory.'); // gpt_pilot_debugging_log
+      console.log('No text files found in the repository, excluding the .git directory.');
       await fs.remove(tempDirPath).catch(fsRemoveError => {
-        console.error('Error removing temporary directory:', fsRemoveError.message, fsRemoveError.stack); // gpt_pilot_debugging_log
+        console.error('Error removing temporary directory:', fsRemoveError.message, fsRemoveError.stack);
       });
       await Repository.deleteOne({ githubUrl, email }).catch(deleteError => {
-        console.error('Error deleting repository entry from database:', deleteError.message, deleteError.stack); // gpt_pilot_debugging_log
+        console.error('Error deleting repository entry from database:', deleteError.message, deleteError.stack);
       });
-      await sendEmailNotification(email, 'no-text-files', githubUrl); // Removed the null argument
-      console.log(`No text files found notification sent to: ${email}`); // gpt_pilot_debugging_log
+      await sendEmailNotification(email, 'no-text-files', githubUrl);
+      console.log(`No text files found notification sent to: ${email}`);
       return;
     }
 
     let fileSummariesObject = {};
 
-    for (const file of processedFiles) {
+    for (const file of relevantFiles) {
       try {
         const content = await fs.readFile(file, 'utf8');
-        const summary = await generateSummary(content);
+        const summary = await generateSummary(content, openaiApiKey);
         fileSummariesObject[file] = summary; // Store summary associated with file name
       } catch (fileReadError) {
         console.error('Error reading or summarizing file:', file, fileReadError.message, fileReadError.stack);
@@ -73,41 +69,31 @@ async function processRepoInBackground(githubUrl, email) {
 
     // Convert allFiles array to string, where each file path is separated by a new line
     const allFilesString = allFiles.join('\n');
-    console.log(`All files as string: ${allFilesString}`); // gpt_pilot_debugging_log
-    
+    console.log(`All files as string: ${allFilesString}`);
+
     // Now, combine the individual file summaries and the allFilesString
     const combinedSummariesWithPaths = `${combinedSummaries}\n\n${allFilesString}`;
 
-    // Update the projectSummaryResponse OpenAI call:
-    const projectSummaryResponse = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [{ role: "system", content: "Summarize this project based on the individual file summaries and the list of all file paths." }, { role: "user", content: combinedSummariesWithPaths }],
-      max_tokens: 2048,
-      temperature: 0.5
-    }).catch(error => {
-      console.error('Error during OpenAI project summary call with all file paths:', error.message, error.stack); // gpt_pilot_debugging_log
-      throw error;
-    });
-    console.log(`Project summary with all file paths has been generated.`); // gpt_pilot_debugging_log
-    
-    const projectSummary = projectSummaryResponse.choices[0].message.content.trim();
+    const projectSummary = await generateSummary(combinedSummariesWithPaths, openaiApiKey);
+    console.log(`Project summary with all file paths has been generated.`);
+
     const updatedRepository = await Repository.findOneAndUpdate(
       { githubUrl, email },
-      { 
-        summary: projectSummary, 
-        isProcessed: true, 
-        fileSummaries: fileSummariesArray 
+      {
+        summary: projectSummary,
+        isProcessed: true,
+        fileSummaries: fileSummariesArray
       },
       { new: true }
     );
 
-    console.log(`Ready to send email notification. UUID: ${updatedRepository.uuid}`); // gpt_pilot_debugging_log
+    console.log(`Ready to send email notification. UUID: ${updatedRepository.uuid}`);
 
     try {
       await sendEmailNotification(email, updatedRepository.uuid, githubUrl);
-      console.log(`Email notification sent. UUID: ${updatedRepository.uuid}`); // gpt_pilot_debugging_log
+      console.log(`Email notification sent. UUID: ${updatedRepository.uuid}`);
     } catch (notificationError) {
-      console.error(`Error sending email notification. UUID: ${updatedRepository.uuid}:`, notificationError.message, notificationError.stack); // gpt_pilot_debugging_log
+      console.error(`Error sending email notification. UUID: ${updatedRepository.uuid}:`, notificationError.message, notificationError.stack);
     }
 
   } catch (error) {

@@ -1,18 +1,16 @@
 const OpenAI = require('openai');
 const Repository = require('./repository');
-require('dotenv').config();
 
-const openai = new OpenAI(process.env.OPENAI_API_KEY);
-
-async function interactWithRepository(uuid, userMessage) {
+async function interactWithRepository(uuid, userMessage, apiKey) {
   try {
     const repository = await Repository.findOne({ uuid: uuid }).exec();
     if (!repository || !repository.isProcessed) {
       throw new Error('Repository not found or not processed yet.');
     }
 
-    // gpt_pilot_debugging_log
     console.log('Repository file summaries:', repository.fileSummaries);
+
+    const openai = new OpenAI({ apiKey });
 
     const systemMessage = {
       role: 'system',
@@ -36,7 +34,6 @@ async function interactWithRepository(uuid, userMessage) {
 
     return response.choices[0].message.content.trim();
   } catch (error) {
-    // gpt_pilot_debugging_log
     console.error('Error in interactWithRepository:', error.message, error.stack);
     throw error;
   }
