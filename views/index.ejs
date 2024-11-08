@@ -8,6 +8,27 @@
     <%- include('_header') %>
     <div class="container mt-5 fade-in">
         <h1 class="mb-4">Welcome to Codebase Chat</h1>
+
+        <!-- OpenAI API Key Form -->
+        <div class="card slide-up mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Set Your OpenAI API Key</h5>
+                <% if (locals.apiKeyMessage) { %>
+                    <div class="alert alert-info mb-3">
+                        <%= apiKeyMessage %>
+                    </div>
+                <% } %>
+                <form action="/set-api-key" method="POST">
+                    <div class="mb-3">
+                        <label for="openaiApiKey" class="form-label">OpenAI API Key</label>
+                        <input type="password" class="form-control" id="openaiApiKey" name="openaiApiKey" value="<%= locals.userApiKey || '' %>" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> <%= locals.userApiKey ? 'Update' : 'Set' %> API Key</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Existing GitHub Repository Form -->
         <div class="card slide-up">
             <div class="card-body">
                 <h5 class="card-title">Submit a GitHub Repository</h5>
@@ -26,5 +47,8 @@
         </div>
     </div>
     <%- include('_footer') %>
+    <script>
+      console.log('API key present in template:', <%= !!locals.userApiKey %>);
+    </script>
 </body>
 </html>

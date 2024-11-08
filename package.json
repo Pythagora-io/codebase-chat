@@ -23,7 +23,7 @@
     "fs-extra": "^11.2.0",
     "mongoose": "^8.1.1",
     "nodemailer": "^6.9.9",
-    "openai": "^4.26.1",
+    "openai": "^4.71.1",
     "simple-git": "^3.22.0",
     "tmp": "^0.2.1",
     "uuid": "^9.0.1"
