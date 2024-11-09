@@ -1,4 +1,3 @@
-```markdown
 # Codebase Chat
 
 Codebase Chat is a web-based tool designed to enhance user interactions with their code repositories through AI-driven summaries and explanations. The application provides a modern, user-friendly interface, allowing non-technical users to easily engage with their code projects.
@@ -66,5 +65,6 @@ To run Codebase Chat, you will need:
 
 ### License
 
-The project is proprietary. Copyright © 2024.
-```
+The project is open source, licensed under the MIT License. See the [LICENSE](LICENSE).
+
+Copyright © 2024 Pythagora-io. 
