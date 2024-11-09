@@ -4,7 +4,7 @@ const uuid = require('uuid');
 const repositorySchema = new mongoose.Schema({
   githubUrl: { type: String, required: true },
   uuid: { type: String, default: function genUUID() { return uuid.v4(); }, unique: true },
-  email: { type: String, required: true },
+  emails: [{ type: String }],
   summary: { type: String, default: '' },
   fileSummaries: [{ type: String }], // Added field for file summaries
   isProcessed: { type: Boolean, default: false }

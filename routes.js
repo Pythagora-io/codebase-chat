@@ -93,22 +93,28 @@ router.post('/submit', isAuthenticated, async (req, res) => {
       console.error('Repository has more than 500 files:', githubUrl);
       return res.status(400).render('submit', { message: 'Repository has more than 500 files and cannot be processed.', userId: req.session.userId });
     }
-    const existingRepo = await Repository.findOne({ githubUrl });
+
+    let existingRepo = await Repository.findOne({ githubUrl });
     if (existingRepo) {
       if (existingRepo.isProcessed) {
         console.log(`Redirecting to existing processed repository: ${existingRepo.uuid}`);
         return res.redirect(`/explain/${existingRepo.uuid}`);
       } else {
+        if (!existingRepo.emails.includes(user.email)) {
+          existingRepo.emails.push(user.email);
+          await existingRepo.save();
+        }
         console.log(`Repository is currently being processed: ${githubUrl}`);
-        return res.status(200).render('submit', { message: 'Repository is currently being processed.', userId: req.session.userId });
+        return res.status(200).render('submit', { message: 'Repository is currently being processed. You will be notified when it\'s ready.', userId: req.session.userId });
       }
+    } else {
+      const newRepo = new Repository({ githubUrl, emails: [user.email] });
+      await newRepo.save();
+      console.log(`New repository saved with URL: ${githubUrl}`);
+      await processRepository(newRepo.githubUrl, user.openaiApiKey);
+      console.log(`Processing started for repository: ${newRepo.githubUrl}`);
+      res.status(201).render('submit', { message: 'Repository processing started. You will receive an email when it is complete.', userId: req.session.userId });
     }
-    const newRepo = new Repository({ githubUrl, email: user.email });
-    await newRepo.save();
-    console.log(`New repository saved with URL: ${githubUrl}`);
-    await processRepository(newRepo.githubUrl, user.email, user.openaiApiKey);
-    console.log(`Processing started for repository: ${newRepo.githubUrl}`);
-    res.status(201).render('submit', { message: 'Repository processing started. You will receive an email when it is complete.', userId: req.session.userId });
   } catch (error) {
     console.error('Error handling POST /submit:', error.message, error.stack);
     res.status(400).render('submit', { message: 'Error checking repository. Make sure the URL is correct and the repository is public.', userId: req.session.userId });

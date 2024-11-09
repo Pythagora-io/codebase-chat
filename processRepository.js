@@ -5,27 +5,23 @@ const { sendEmailNotification } = require('./emailService');
 const fs = require('fs-extra');
 const path = require('path');
 
-async function processRepository(githubUrl, email, openaiApiKey) {
-  // Start processing asynchronously
-  processRepoInBackground(githubUrl, email, openaiApiKey).catch(error => {
+async function processRepository(githubUrl, openaiApiKey) {
+  processRepoInBackground(githubUrl, openaiApiKey).catch(error => {
     console.error('Asynchronous processing error:', error.message, error.stack);
-    // Save the error state to the database
-    Repository.findOneAndUpdate({ githubUrl, email }, { isProcessed: true, processingError: error.message }, { new: true }).catch(err => {
+    Repository.findOneAndUpdate({ githubUrl }, { isProcessed: true, processingError: error.message }, { new: true }).catch(err => {
       console.error('Failed to update repository with error state:', err.message, err.stack);
     });
   });
 
-  // Return immediately for the server to send the response
   console.log(`Processing started for repository: ${githubUrl}`);
 }
 
-async function processRepoInBackground(githubUrl, email, openaiApiKey) {
+async function processRepoInBackground(githubUrl, openaiApiKey) {
   let tempDirPath;
   try {
     const { processedFiles, allFiles, tempDirPath: dirPath } = await cloneAndProcessRepo(githubUrl);
     tempDirPath = dirPath;
 
-    // Exclude files within ".git" directory and check if there are 0 text files
     let relevantFiles;
     try {
       const gitDirPath = dirPath + path.sep + '.git';
@@ -42,11 +38,14 @@ async function processRepoInBackground(githubUrl, email, openaiApiKey) {
       await fs.remove(tempDirPath).catch(fsRemoveError => {
         console.error('Error removing temporary directory:', fsRemoveError.message, fsRemoveError.stack);
       });
-      await Repository.deleteOne({ githubUrl, email }).catch(deleteError => {
-        console.error('Error deleting repository entry from database:', deleteError.message, deleteError.stack);
+      await Repository.findOneAndUpdate({ githubUrl }, { isProcessed: true, processingError: 'No text files found' }, { new: true }).catch(deleteError => {
+        console.error('Error updating repository entry in database:', deleteError.message, deleteError.stack);
       });
-      await sendEmailNotification(email, 'no-text-files', githubUrl);
-      console.log(`No text files found notification sent to: ${email}`);
+      // Update to handle notification for 'no text files found' scenario appropriately
+      const repository = await Repository.findOne({ githubUrl });
+      if (repository && repository.emails && repository.emails.length > 0) {
+        console.log(`No text files found. Notifications would be handled through a different mechanism for ${githubUrl}`);
+      }
       return;
     }
 
@@ -56,29 +55,27 @@ async function processRepoInBackground(githubUrl, email, openaiApiKey) {
       try {
         const content = await fs.readFile(file, 'utf8');
         const summary = await generateSummary(content, openaiApiKey);
-        fileSummariesObject[file] = summary; // Store summary associated with file name
+        fileSummariesObject[file] = summary;
       } catch (fileReadError) {
         console.error('Error reading or summarizing file:', file, fileReadError.message, fileReadError.stack);
       }
     }
 
-    const fileSummariesArray = Object.values(fileSummariesObject); // Convert summaries object to array
+    const fileSummariesArray = Object.values(fileSummariesObject);
     console.log('File summaries:', fileSummariesArray);
 
     const combinedSummaries = fileSummariesArray.join(' ');
 
-    // Convert allFiles array to string, where each file path is separated by a new line
     const allFilesString = allFiles.join('\n');
     console.log(`All files as string: ${allFilesString}`);
 
-    // Now, combine the individual file summaries and the allFilesString
     const combinedSummariesWithPaths = `${combinedSummaries}\n\n${allFilesString}`;
 
     const projectSummary = await generateSummary(combinedSummariesWithPaths, openaiApiKey);
     console.log(`Project summary with all file paths has been generated.`);
 
     const updatedRepository = await Repository.findOneAndUpdate(
-      { githubUrl, email },
+      { githubUrl },
       {
         summary: projectSummary,
         isProcessed: true,
@@ -87,13 +84,18 @@ async function processRepoInBackground(githubUrl, email, openaiApiKey) {
       { new: true }
     );
 
-    console.log(`Ready to send email notification. UUID: ${updatedRepository.uuid}`);
+    console.log(`Ready to send email notifications. UUID: ${updatedRepository.uuid}`);
 
     try {
-      await sendEmailNotification(email, updatedRepository.uuid, githubUrl);
-      console.log(`Email notification sent. UUID: ${updatedRepository.uuid}`);
+      const repository = await Repository.findOne({ githubUrl });
+      if (repository && repository.emails && repository.emails.length > 0) {
+        await sendEmailNotification(repository.emails, updatedRepository.uuid, githubUrl);
+        console.log(`Email notifications sent for ${githubUrl}`);
+      } else {
+        console.log(`No emails found for repository: ${githubUrl}`);
+      }
     } catch (notificationError) {
-      console.error(`Error sending email notification. UUID: ${updatedRepository.uuid}:`, notificationError.message, notificationError.stack);
+      console.error(`Error sending email notifications. UUID: ${updatedRepository.uuid}:`, notificationError.message, notificationError.stack);
     }
 
   } catch (error) {
